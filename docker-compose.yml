@@ -1,0 +1,68 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgresprisma
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+        POSTGRES_DB: ${POSTGRES_DB}
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    env_file:
+      - .env
+    volumes:
+      - postgres:/var/lib/postgresql/16/data
+    networks:
+      - test-net
+  nest-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nest-api
+    ports:
+      - 3000:3000
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    volumes:
+      - nest-api:/var/lib/nest-api/data
+    networks:
+      - test-net
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4_container
+    restart: always
+    ports:
+      - "8888:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.ru
+      PGADMIN_DEFAULT_PASSWORD: 12345
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - test-net
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+      args:
+        VITE_SERVER_URL: ${VITE_SERVER_URL}
+    ports:
+      - "80:80"
+    env_file:
+      - .env
+    volumes:
+      - frontend:/var/lib/frontend/data
+    networks:
+      - test-net
+volumes:
+  postgres:
+  nest-api:
+  pgadmin-data:
+  frontend:
+networks:
+  test-net:
+    driver: bridge
